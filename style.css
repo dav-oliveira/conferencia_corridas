@@ -46,7 +46,7 @@ button:hover {
     text-align: center;
     display: inline-block;
     width: 100%;
-    max-width: 1500px; /* Define a largura máxima */
+    max-width: 1300px; /* Define a largura máxima */
     overflow-x: auto; /* Adiciona rolagem horizontal em dispositivos pequenos */
 }
 
