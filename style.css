@@ -46,14 +46,18 @@ button:hover {
     text-align: center;
     display: inline-block;
     width: 100%;
-    max-width: 1300px; /* Define a largura máxima */
-    overflow-x: auto; /* Adiciona rolagem horizontal em dispositivos pequenos */
+    max-width: 1300px;
+    /* Define a largura máxima */
+    overflow-x: auto;
+    /* Adiciona rolagem horizontal em dispositivos pequenos */
 }
 
 table {
-    width: 100%;
+    width: 75%;
     border-collapse: collapse;
     margin-top: 20px;
+    margin-left: auto;
+    margin-right: auto;
     text-align: center;
 }
 
@@ -61,7 +65,7 @@ th,
 td {
     border: 1px solid #ccc;
     padding: 8px;
-    text-align: left;
+    text-align: center;
 }
 
 th {
@@ -83,15 +87,18 @@ tr:hover {
 /* Estilos adicionais para tornar a tabela responsiva */
 @media (max-width: 768px) {
     table {
-        font-size: 12px; /* Reduz o tamanho da fonte */
+        font-size: 12px;
+        /* Reduz o tamanho da fonte */
     }
 
     th,
     td {
-        padding: 5px; /* Reduz o espaço interno */
+        padding: 5px;
+        /* Reduz o espaço interno */
     }
 
     button {
-        font-size: 14px; /* Reduz o tamanho do botão */
+        font-size: 14px;
+        /* Reduz o tamanho do botão */
     }
 }

@@ -11,33 +11,31 @@
     <!-- Meta Author -->
     <meta name="author" content="Daniel Vicalvi">
     <title>Confência Corridas</title>
-    <link rel="stylesheet" href="style.css?v=1.0">
+    <link rel="stylesheet" href="style.css?v=1.1">
 </head>
 
 <body>
-    <h1>Conferência das Corridas</h1>
-    <form id="uploadForm">
-        <label for="fileInput">Escolha uma planilha:</label>
-        <input type="file" id="fileInput" accept=".csv">
-        <button type="button" onclick="processFile()">Resultado</button>
-    </form>
-    <div id="result">
-        <h2>Resultados</h2>
-        <table id="resultTable">
-            <thead>
-                <tr>
-                    <th>Nº OS</th>
-                    <th>Status</th>
-                    <th>Motorista</th>
-                    <th>Estimativa do Valor da Corrida</th>
-                    <th>Valor da Corrida</th>
-                </tr>
-            </thead>
-            <tbody></tbody>
-        </table>
+    <input type="file" id="fileInput">
+    <button onclick="processFile()">Processar Arquivo</button>
+    <button onclick="filterFinished()">Exibir Finalizadas</button>
+    <button onclick="filterCanceled()">Exibir Canceladas</button>
+
+    <table id="resultTable">
+        <thead>
+            <tr>
+                <th>Nº OS</th>
+                <th>Status</th>
+                <th>Motorista</th>
+                <th>Estimativa do Valor da Corrida</th>
+                <th>Valor da Corrida</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
     </div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
-    <script src="script.js?v=1.0"></script>
+    <script src="script.js?v=1.1"></script>
 </body>
 
 </html>
