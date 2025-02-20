@@ -19,7 +19,6 @@ h1 {
 /* 🔹 FORMULÁRIO & UPLOAD DE ARQUIVO 🔹 */
 /* ============================== */
 
-/* Contêiner dos botões */
 #controls {
     display: flex;
     justify-content: center;
@@ -28,12 +27,10 @@ h1 {
     margin-bottom: 20px;
 }
 
-/* Input de arquivo oculto */
 input[type="file"] {
     display: none;
 }
 
-/* Botão estilizado para upload */
 .custom-file-upload {
     padding: 10px 16px;
     background-color: #45a049;
@@ -74,7 +71,6 @@ button:hover {
     background-color: #2d7c31;
 }
 
-/* Ícones nos Botões */
 button i,
 .custom-file-upload i {
     font-size: 16px;
@@ -94,7 +90,6 @@ button i,
     width: 100%;
     max-width: 1300px;
     overflow-x: auto;
-    /* Garante rolagem horizontal se necessário */
 }
 
 /* ===================== */
@@ -109,7 +104,6 @@ table {
     text-align: center;
 }
 
-/* Cabeçalho */
 th {
     background-color: #2d7c31;
     color: #fff;
@@ -117,7 +111,6 @@ th {
     font-size: 14px;
 }
 
-/* Células */
 th,
 td {
     border: 1px solid #ccc;
@@ -125,18 +118,55 @@ td {
     text-align: center;
 }
 
-/* Linhas Alternadas (Zebra Stripes) */
 tr:nth-child(even) {
     background-color: #e9f5e9;
 }
 
-/* Efeito Hover */
 tr:hover {
     background-color: #d4edd4;
 }
 
 /* ============================== */
-/* 🔹 RESPONSIVIDADE (TELAS PEQUENAS) 🔹 */
+/* 🔹 PAGINAÇÃO 🔹 */
+/* ============================== */
+
+#pagination {
+    display: flex;
+    justify-content: center;
+    gap: 5px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+    /* 🔹 Permite que os botões quebrem para a linha de baixo */
+    max-width: 100%;
+    padding: 10px;
+    overflow-x: auto;
+}
+
+.page-button {
+    padding: 8px 12px;
+    border: 1px solid #2d7c31;
+    background-color: #2d7c31;
+    cursor: pointer;
+    border-radius: 5px;
+    white-space: nowrap;
+    font-size: 14px;
+    min-width: 40px;
+    /* 🔹 Garante um tamanho mínimo para os botões */
+}
+
+.page-button:hover {
+    background-color: #3a0ce0;
+}
+
+.page-button.active {
+    background-color: #3a0ce0;
+    color: white;
+    font-weight: bold;
+    border-color: #000000;
+}
+
+/* ============================== */
+/* 🔹 RESPONSIVIDADE 🔹 */
 /* ============================== */
 
 @media (max-width: 768px) {
@@ -153,36 +183,17 @@ tr:hover {
         font-size: 13px;
         padding: 8px 12px;
     }
-}
 
-#pagination {
-    display: flex;
-    justify-content: center;
-    gap: 5px;
-    margin-top: 10px;
-    flex-wrap: wrap;
-    /* 🔹 Permite que os botões quebrem para a linha de baixo */
-    max-width: 100%;
-    padding: 10px;
-}
+    #pagination {
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 4px;
+    }
 
-.page-button {
-    padding: 5px 10px;
-    border: 1px solid #2d7c31;
-    background-color: #2d7c31;
-    cursor: pointer;
-    border-radius: 5px;
-    white-space: nowrap;
-    /* 🔹 Evita que o texto do botão quebre */
-}
-
-.page-button:hover {
-    background-color: #3a0ce0;
-}
-
-.page-button.active {
-    background-color: #3a0ce0;
-    color: white;
-    font-weight: bold;
-    border-color: #000000;
+    .page-button {
+        font-size: 12px;
+        padding: 6px 10px;
+        min-width: 30px;
+        /* 🔹 Ajusta para telas menores */
+    }
 }
