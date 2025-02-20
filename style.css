@@ -160,6 +160,10 @@ tr:hover {
     justify-content: center;
     gap: 5px;
     margin-top: 10px;
+    flex-wrap: wrap;
+    /* 🔹 Permite que os botões quebrem para a linha de baixo */
+    max-width: 100%;
+    padding: 10px;
 }
 
 .page-button {
@@ -168,6 +172,8 @@ tr:hover {
     background-color: #2d7c31;
     cursor: pointer;
     border-radius: 5px;
+    white-space: nowrap;
+    /* 🔹 Evita que o texto do botão quebre */
 }
 
 .page-button:hover {
@@ -175,7 +181,7 @@ tr:hover {
 }
 
 .page-button.active {
-    background-color: #3a0ce0; /* Cor verde para destacar a página ativa */
+    background-color: #3a0ce0;
     color: white;
     font-weight: bold;
     border-color: #000000;
