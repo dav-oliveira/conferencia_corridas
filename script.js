@@ -1,5 +1,8 @@
 let parsedData = [];
+let filteredData = [];
 let currentFilter = 'finished';
+let currentPage = 1;
+const rowsPerPage = 15;
 
 // 📌 Processa o arquivo CSV carregado pelo usuário
 function processFile() {
@@ -10,18 +13,23 @@ function processFile() {
         return;
     }
 
+    document.getElementById('loadingMessage').style.display = 'block';
+
     const reader = new FileReader();
     reader.onload = function (event) {
         Papa.parse(event.target.result, {
             header: true,
             skipEmptyLines: true,
             complete: function (results) {
-                parsedData = results.data;
-                updatePaymentFilter(); // Atualiza a lista de formas de pagamento disponíveis
-                applyFilters(); // Aplica os filtros ao carregar o arquivo
+                parsedData = results.data.map(parseRow).filter(row => row !== null);
+                updatePaymentFilter();
+                applyFilters();
+                document.getElementById('loadingMessage').style.display = 'none';
             },
             error: function (error) {
                 console.error('Erro ao processar o arquivo:', error);
+                document.getElementById('loadingMessage').style.display = 'none';
+                alert('Ocorreu um erro ao processar o arquivo. Tente novamente.');
             }
         });
     };
@@ -33,10 +41,7 @@ function updatePaymentFilter() {
     const paymentSelect = document.getElementById('paymentFilter');
     paymentSelect.innerHTML = '<option value="">Todas as Formas de Pagamento</option>';
 
-    // Extrai as formas de pagamento únicas do CSV
-    const paymentMethods = [...new Set(parsedData.map(row => row['Forma de pagamento']).filter(Boolean))];
-
-    // Adiciona cada forma de pagamento ao select
+    const paymentMethods = [...new Set(parsedData.map(row => row.formaPagamento).filter(Boolean))];
     paymentMethods.forEach(method => {
         const option = document.createElement('option');
         option.value = method;
@@ -48,25 +53,103 @@ function updatePaymentFilter() {
 // 📌 Aplica os filtros e exibe os resultados na tabela
 function applyFilters() {
     const paymentFilter = document.getElementById('paymentFilter').value;
+    const differenceFilter = document.getElementById('differenceFilter').value;
 
-    let filteredData = parsedData.map(parseRow).filter(row => row !== null);
+    filteredData = parsedData.filter(row => row !== null); // 🔹 Agora não sobrescreve a variável global
 
     if (currentFilter === 'finished') {
         filteredData = filteredData.filter(row => row.diferenca !== null && row.diferenca !== 0);
-        // Ordena pelo maior valor de diferença
         filteredData.sort((a, b) => b.diferenca - a.diferenca);
     } else if (currentFilter === 'canceled') {
         filteredData = filteredData.filter(row => row.status === 'Cancelada' && row.motorista !== 'N/A');
-        // Ordena pelo maior valor estimado da corrida
-        filteredData.sort((a, b) => parseFloat(b.estimativa.replace('R$ ', '').replace(',', '.')) -
-            parseFloat(a.estimativa.replace('R$ ', '').replace(',', '.')));
+        filteredData.sort((a, b) => parseFloat(b.estimativa.replace('R$ ', '').replace(',', '.')) - parseFloat(a.estimativa.replace('R$ ', '').replace(',', '.')));
     }
 
     if (paymentFilter) {
         filteredData = filteredData.filter(row => row.formaPagamento === paymentFilter);
     }
 
-    renderTable(filteredData);
+    // 📌 Aplica o filtro de diferença (positivos, negativos ou todos)
+    if (differenceFilter === 'negative') {
+        filteredData = filteredData.filter(row => row.diferenca < 0);
+    } else if (differenceFilter === 'positive') {
+        filteredData = filteredData.filter(row => row.diferenca > 0);
+    }
+
+    // 📌 Se nenhum dado for encontrado, exibe uma mensagem
+    if (filteredData.length === 0) {
+        console.warn("Nenhum dado encontrado para os filtros aplicados.");
+    }
+
+    paginateData();
+}
+
+// 📌 Função de paginação
+function paginateData() {
+    const totalRows = filteredData.length;
+    const totalPages = Math.ceil(totalRows / rowsPerPage);
+
+    const startIndex = (currentPage - 1) * rowsPerPage;
+    const endIndex = startIndex + rowsPerPage;
+    const paginatedData = filteredData.slice(startIndex, endIndex);
+
+    renderTable(paginatedData);
+    renderPagination(totalPages);
+}
+
+// 📌 Renderiza os dados na tabela HTML
+function renderTable(data) {
+    const resultTableBody = document.getElementById('resultTable').querySelector('tbody');
+    resultTableBody.innerHTML = '';
+
+    if (data.length === 0) {
+        resultTableBody.innerHTML = '<tr><td colspan="7">Nenhum dado encontrado</td></tr>';
+        return;
+    }
+
+    data.forEach(row => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>${row.os}</td>
+            <td>${row.status}</td>
+            <td>${row.motorista}</td>
+            <td>${row.formaPagamento}</td>
+            <td>${row.estimativa}</td>
+            <td>${row.valorFinal}</td>
+            <td>${row.diferencaStr}</td>
+        `;
+        resultTableBody.appendChild(tr);
+    });
+}
+
+// 📌 Renderiza a navegação de páginas
+function renderPagination(totalPages) {
+    const paginationContainer = document.getElementById('pagination');
+    paginationContainer.innerHTML = '';
+
+    for (let i = 1; i <= totalPages; i++) {
+        const pageButton = document.createElement('button');
+        pageButton.textContent = i;
+        pageButton.classList.add('page-button');
+        if (i === currentPage) {
+            pageButton.classList.add('active'); // 🔹 Destaque na página atual
+        }
+        pageButton.addEventListener('click', () => goToPage(i));
+        paginationContainer.appendChild(pageButton);
+    }
+}
+
+// 📌 Vai para uma página específica
+function goToPage(pageNumber) {
+    if (pageNumber < 1 || pageNumber > Math.ceil(filteredData.length / rowsPerPage)) return;
+    currentPage = pageNumber;
+    paginateData();
+}
+
+// 📌 Atualiza o filtro de status e reaplica os filtros
+function setFilter(filter) {
+    currentFilter = filter;
+    applyFilters();
 }
 
 // 📌 Converte uma linha do CSV para um objeto formatado
@@ -99,33 +182,7 @@ function parseRow(row) {
         formaPagamento,
         estimativa: `R$ ${estimativaStr || 'N/A'}`,
         valorFinal: valorCorridaStr ? `R$ ${valorCorridaStr}` : 'N/A',
-        diferenca,
+        diferenca: diferenca !== null ? diferenca : 0, // 🔹 Agora sempre será um número válido
         diferencaStr
     };
-}
-
-// 📌 Renderiza os dados na tabela HTML
-function renderTable(data) {
-    const resultTableBody = document.getElementById('resultTable').querySelector('tbody');
-    resultTableBody.innerHTML = '';
-
-    data.forEach(row => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td>${row.os}</td>
-            <td>${row.status}</td>
-            <td>${row.motorista}</td>
-            <td>${row.formaPagamento}</td>
-            <td>${row.estimativa}</td>
-            <td>${row.valorFinal}</td>
-            <td>${row.diferencaStr}</td>
-        `;
-        resultTableBody.appendChild(tr);
-    });
-}
-
-// 📌 Atualiza o filtro de status e reaplica os filtros
-function setFilter(filter) {
-    currentFilter = filter;
-    applyFilters();
 }

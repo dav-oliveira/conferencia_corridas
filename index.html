@@ -44,6 +44,14 @@
         <!-- Filtro de Forma de Pagamento -->
         <select id="paymentFilter" onchange="applyFilters()"></select>
 
+        <label for="differenceFilter"></label>
+        <select id="differenceFilter" onchange="applyFilters()">
+            <option value="all">Todos</option>
+            <option value="negative">Negativos</option>
+            <option value="positive">Positivos</option>
+        </select>
+
+
     </div>
 
     <!-- Tabela de Resultados -->
@@ -63,6 +71,10 @@
             <tbody></tbody>
         </table>
     </div>
+
+    <div id="loadingMessage" style="display:none;">Carregando...</div>
+
+    <div id="pagination"></div>
 
     <!-- Scripts -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
