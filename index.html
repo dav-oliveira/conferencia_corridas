@@ -13,31 +13,61 @@
     <!-- Meta Autor -->
     <meta name="author" content="Daniel Vicalvi">
     <title>Conferência de Corridas</title>
-    <link rel="stylesheet" href="style.css?v=1.1">
+
+    <!-- Estilos -->
+    <link rel="stylesheet" href="style.css?v=1.2">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
 </head>
 
 <body>
-    <input type="file" id="fileInput">
-    <button onclick="processFile()">Processar Arquivo</button>
-    <button onclick="filterFinished()">Exibir Finalizadas</button>
-    <button onclick="filterCanceled()">Exibir Canceladas</button>
 
-    <table id="resultTable">
-        <thead>
-            <tr>
-                <th>Nº OS</th>
-                <th>Status</th>
-                <th>Motorista</th>
-                <th>Estimativa do Valor da Corrida</th>
-                <th>Valor da Corrida</th>
-            </tr>
-        </thead>
-        <tbody></tbody>
-    </table>
+    <h1>Conferência de Corridas</h1>
+
+    <!-- Contêiner para os botões -->
+    <div id="controls">
+        <!-- Input de arquivo estilizado -->
+        <label for="fileInput" class="custom-file-upload">
+            <i class="fas fa-file-upload"></i> Selecionar Arquivo
+        </label>
+        <input type="file" id="fileInput" accept=".csv">
+
+        <!-- Botões de ação -->
+        <button onclick="processFile()"><i class="fas fa-play"></i> Processar Arquivo</button>
+        <button onclick="currentFilter='finished'; applyFilters();">
+            <i class="fas fa-check"></i> Exibir Finalizadas
+        </button>
+
+        <button onclick="currentFilter='canceled'; applyFilters();">
+            <i class="fas fa-times"></i> Exibir Canceladas
+        </button>
+
+        <!-- Filtro de Forma de Pagamento -->
+        <select id="paymentFilter" onchange="applyFilters()"></select>
 
     </div>
+
+    <!-- Tabela de Resultados -->
+    <div id="result">
+        <table id="resultTable">
+            <thead>
+                <tr>
+                    <th>Nº OS</th>
+                    <th>Status</th>
+                    <th>Motorista</th>
+                    <th>Forma de pagamento</th>
+                    <th>Estimativa do Valor da Corrida</th>
+                    <th>Valor da Corrida</th>
+                    <th>Diferença</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+    <!-- Scripts -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
-    <script src="script.js?v=1.1"></script>
+    <script src="script.js?v=1.2"></script>
+
 </body>
 
 </html>

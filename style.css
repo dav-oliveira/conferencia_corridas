@@ -1,3 +1,7 @@
+/* ===================== */
+/* 🔹 ESTILIZAÇÃO GERAL 🔹 */
+/* ===================== */
+
 body {
     font-family: Arial, sans-serif;
     margin: 20px;
@@ -5,100 +9,148 @@ body {
     text-align: center;
 }
 
+/* Título */
 h1 {
     color: #333;
     margin-bottom: 20px;
 }
 
-form {
+/* ============================== */
+/* 🔹 FORMULÁRIO & UPLOAD DE ARQUIVO 🔹 */
+/* ============================== */
+
+/* Contêiner dos botões */
+#controls {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
     margin-bottom: 20px;
 }
 
-label {
-    font-weight: bold;
-    margin-right: 10px;
-}
-
+/* Input de arquivo oculto */
 input[type="file"] {
-    padding: 5px;
-    border: 1px solid #ccc;
-    border-radius: 3px;
+    display: none;
 }
 
-button {
-    padding: 8px 16px;
+/* Botão estilizado para upload */
+.custom-file-upload {
+    padding: 10px 16px;
     background-color: #45a049;
     color: #fff;
     border: none;
-    border-radius: 3px;
+    border-radius: 5px;
     cursor: pointer;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: background-color 0.3s ease-in-out;
+}
+
+.custom-file-upload:hover {
+    background-color: #2d7c31;
+}
+
+/* ===================== */
+/* 🔹 BOTÕES 🔹 */
+/* ===================== */
+
+button {
+    padding: 10px 16px;
+    background-color: #45a049;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: background-color 0.3s ease-in-out;
 }
 
 button:hover {
     background-color: #2d7c31;
 }
 
+/* Ícones nos Botões */
+button i,
+.custom-file-upload i {
+    font-size: 16px;
+}
+
+/* ========================= */
+/* 🔹 ÁREA DE RESULTADOS 🔹 */
+/* ========================= */
+
 #result {
     background-color: #fff;
     padding: 20px;
-    border-radius: 5px;
-    box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    box-shadow: 0px 2px 10px rgba(0, 0, 0, 0.1);
     text-align: center;
     display: inline-block;
     width: 100%;
     max-width: 1300px;
-    /* Define a largura máxima */
     overflow-x: auto;
-    /* Adiciona rolagem horizontal em dispositivos pequenos */
+    /* Garante rolagem horizontal se necessário */
 }
 
+/* ===================== */
+/* 🔹 TABELA 🔹 */
+/* ===================== */
+
 table {
-    width: 75%;
+    width: 100%;
+    max-width: 1300px;
     border-collapse: collapse;
     margin-top: 20px;
-    margin-left: auto;
-    margin-right: auto;
     text-align: center;
 }
 
+/* Cabeçalho */
+th {
+    background-color: #2d7c31;
+    color: #fff;
+    padding: 12px;
+    font-size: 14px;
+}
+
+/* Células */
 th,
 td {
     border: 1px solid #ccc;
-    padding: 8px;
+    padding: 10px;
     text-align: center;
 }
 
-th {
-    background-color: #45a049;
-    color: #fff;
-    text-align: center;
-}
-
+/* Linhas Alternadas (Zebra Stripes) */
 tr:nth-child(even) {
-    background-color: #f2f2f2;
-
+    background-color: #e9f5e9;
 }
 
+/* Efeito Hover */
 tr:hover {
-    background-color: #e0e0e0;
-
+    background-color: #d4edd4;
 }
 
-/* Estilos adicionais para tornar a tabela responsiva */
+/* ============================== */
+/* 🔹 RESPONSIVIDADE (TELAS PEQUENAS) 🔹 */
+/* ============================== */
+
 @media (max-width: 768px) {
     table {
         font-size: 12px;
-        /* Reduz o tamanho da fonte */
     }
 
     th,
     td {
-        padding: 5px;
-        /* Reduz o espaço interno */
+        padding: 8px;
     }
 
     button {
-        font-size: 14px;
-        /* Reduz o tamanho do botão */
+        font-size: 13px;
+        padding: 8px 12px;
     }
 }
