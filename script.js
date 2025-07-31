@@ -39,7 +39,7 @@ function processFile() {
 // 📌 Atualiza o filtro de forma de pagamento dinamicamente
 function updatePaymentFilter() {
     const paymentSelect = document.getElementById('paymentFilter');
-    paymentSelect.innerHTML = '<option value="">Todas as Formas de Pagamento</option>';
+    paymentSelect.innerHTML = '<option value="">Todas</option>';
 
     const paymentMethods = [...new Set(parsedData.map(row => row.formaPagamento).filter(Boolean))];
     paymentMethods.forEach(method => {
@@ -54,8 +54,10 @@ function updatePaymentFilter() {
 function applyFilters() {
     const paymentFilter = document.getElementById('paymentFilter').value;
     const differenceFilter = document.getElementById('differenceFilter').value;
+    const percentInput = document.getElementById('percentChangeFilter')?.value;
+    const percentValue = parseFloat(percentInput);
 
-    filteredData = parsedData.filter(row => row !== null); // 🔹 Agora não sobrescreve a variável global
+    filteredData = parsedData.filter(row => row !== null);
 
     if (currentFilter === 'finished') {
         filteredData = filteredData.filter(row => row.diferenca !== null && row.diferenca !== 0);
@@ -69,14 +71,20 @@ function applyFilters() {
         filteredData = filteredData.filter(row => row.formaPagamento === paymentFilter);
     }
 
-    // 📌 Aplica o filtro de diferença (positivos, negativos ou todos)
     if (differenceFilter === 'negative') {
         filteredData = filteredData.filter(row => row.diferenca < 0);
     } else if (differenceFilter === 'positive') {
         filteredData = filteredData.filter(row => row.diferenca > 0);
     }
 
-    // 📌 Se nenhum dado for encontrado, exibe uma mensagem
+    // 📌 Agora sim aplica o filtro de porcentagem no momento certo
+    if (!isNaN(percentValue)) {
+        filteredData = filteredData.filter(row =>
+            row.porcentagem !== null &&
+            Math.abs(row.porcentagem) >= percentValue
+        );
+    }
+
     if (filteredData.length === 0) {
         console.warn("Nenhum dado encontrado para os filtros aplicados.");
     }
@@ -182,7 +190,11 @@ function parseRow(row) {
         formaPagamento,
         estimativa: `R$ ${estimativaStr || 'N/A'}`,
         valorFinal: valorCorridaStr ? `R$ ${valorCorridaStr}` : 'N/A',
-        diferenca: diferenca !== null ? diferenca : 0, // 🔹 Agora sempre será um número válido
-        diferencaStr
+        diferenca: diferenca !== null ? diferenca : 0,
+        diferencaStr,
+        porcentagem: (valorCorrida !== null && estimativaValor > 0)
+            ? ((valorCorrida - estimativaValor) / estimativaValor) * 100
+            : null
     };
+
 }
