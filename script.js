@@ -1,98 +1,107 @@
 let parsedData = [];
 let filteredData = [];
-let currentFilter = 'finished';
 let currentPage = 1;
 const rowsPerPage = 15;
+let currentFilter = '';
 
-// 📌 Processa o arquivo CSV carregado pelo usuário
+function normalizeText(text) {
+    if (!text) return '';
+    return text.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+}
+
+function parseCurrencyToNumber(str) {
+    if (!str) return 0;
+    return parseFloat(str.replace('R$', '').replace(/\./g, '').replace(',', '.').trim()) || 0;
+}
+
 function processFile() {
     const fileInput = document.getElementById('fileInput').files[0];
-
     if (!fileInput) {
         alert('Por favor, selecione um arquivo.');
         return;
     }
-
     document.getElementById('loadingMessage').style.display = 'block';
 
     const reader = new FileReader();
-    reader.onload = function (event) {
+    reader.onload = function(event) {
         Papa.parse(event.target.result, {
             header: true,
             skipEmptyLines: true,
-            complete: function (results) {
+            complete: function(results) {
                 parsedData = results.data.map(parseRow).filter(row => row !== null);
-                updatePaymentFilter();
+                currentFilter = '';
                 applyFilters();
                 document.getElementById('loadingMessage').style.display = 'none';
             },
-            error: function (error) {
+            error: function(error) {
                 console.error('Erro ao processar o arquivo:', error);
-                document.getElementById('loadingMessage').style.display = 'none';
                 alert('Ocorreu um erro ao processar o arquivo. Tente novamente.');
+                document.getElementById('loadingMessage').style.display = 'none';
             }
         });
     };
     reader.readAsText(fileInput, 'ISO-8859-1');
 }
 
-// 📌 Atualiza o filtro de forma de pagamento dinamicamente
-function updatePaymentFilter() {
-    const paymentSelect = document.getElementById('paymentFilter');
-    paymentSelect.innerHTML = '<option value="">Todas</option>';
-
-    const paymentMethods = [...new Set(parsedData.map(row => row.formaPagamento).filter(Boolean))];
-    paymentMethods.forEach(method => {
-        const option = document.createElement('option');
-        option.value = method;
-        option.textContent = method;
-        paymentSelect.appendChild(option);
-    });
-}
-
-// 📌 Aplica os filtros e exibe os resultados na tabela
 function applyFilters() {
-    const paymentFilter = document.getElementById('paymentFilter').value;
-    const differenceFilter = document.getElementById('differenceFilter').value;
-    const percentInput = document.getElementById('percentChangeFilter')?.value;
-    const percentValue = parseFloat(percentInput);
+    if (!parsedData.length) return;
 
-    filteredData = parsedData.filter(row => row !== null);
-
-    if (currentFilter === 'finished') {
-        filteredData = filteredData.filter(row => row.diferenca !== null && row.diferenca !== 0);
-        filteredData.sort((a, b) => b.diferenca - a.diferenca);
+    if (currentFilter === 'finishedPlus') {
+        filteredData = parsedData.filter(row => {
+            return row.status.toLowerCase() === 'finalizada' &&
+                ['voucher', 'cartao no app', 'cartao app'].includes(normalizeText(row.formaPagamento)) &&
+                row.porcentagem !== null &&
+                row.porcentagem > 20 &&
+                row.motorista.toUpperCase() !== 'N/A';
+        });
+    } else if (currentFilter === 'finished') {
+        filteredData = parsedData.filter(row => {
+            return row.status.toLowerCase() === 'finalizada' &&
+                ['dinheiro', 'pix', 'cartao de credito', 'cartao de debito'].includes(normalizeText(row.formaPagamento)) &&
+                row.porcentagem !== null &&
+                row.porcentagem < -20 &&
+                row.motorista.toUpperCase() !== 'N/A';
+        });
     } else if (currentFilter === 'canceled') {
-        filteredData = filteredData.filter(row => row.status === 'Cancelada' && row.motorista !== 'N/A');
-        filteredData.sort((a, b) => parseFloat(b.estimativa.replace('R$ ', '').replace(',', '.')) - parseFloat(a.estimativa.replace('R$ ', '').replace(',', '.')));
+        filteredData = parsedData.filter(row => {
+            const forma = normalizeText(row.formaPagamento);
+            return row.status.toLowerCase() === 'cancelada' &&
+                row.motorista.toUpperCase() !== 'N/A' &&
+                (row.valorCorrida !== null && row.valorCorrida > 25 || forma === 'voucher');
+        });
+
+        filteredData.sort((a, b) => {
+            const aIsVoucher = normalizeText(a.formaPagamento) === 'voucher' ? 0 : 1;
+            const bIsVoucher = normalizeText(b.formaPagamento) === 'voucher' ? 0 : 1;
+            if (aIsVoucher !== bIsVoucher) return aIsVoucher - bIsVoucher;
+            const valA = parseCurrencyToNumber(a.estimativa);
+            const valB = parseCurrencyToNumber(b.estimativa);
+            return valB - valA;
+        });
+
+        currentPage = 1;
+        paginateData();
+        return;
+    } else {
+        // filtro padrão: finalizadas com diferença percentual > 20%
+        filteredData = parsedData.filter(row => {
+            return row.status.toLowerCase() === 'finalizada' &&
+                row.porcentagem !== null &&
+                Math.abs(row.porcentagem) > 20 &&
+                row.motorista.toUpperCase() !== 'N/A';
+        });
     }
 
-    if (paymentFilter) {
-        filteredData = filteredData.filter(row => row.formaPagamento === paymentFilter);
-    }
+    filteredData.sort((a, b) => {
+        const valA = parseCurrencyToNumber(a.estimativa);
+        const valB = parseCurrencyToNumber(b.estimativa);
+        return valB - valA;
+    });
 
-    if (differenceFilter === 'negative') {
-        filteredData = filteredData.filter(row => row.diferenca < 0);
-    } else if (differenceFilter === 'positive') {
-        filteredData = filteredData.filter(row => row.diferenca > 0);
-    }
-
-    // 📌 Agora sim aplica o filtro de porcentagem no momento certo
-    if (!isNaN(percentValue)) {
-        filteredData = filteredData.filter(row =>
-            row.porcentagem !== null &&
-            Math.abs(row.porcentagem) >= percentValue
-        );
-    }
-
-    if (filteredData.length === 0) {
-        console.warn("Nenhum dado encontrado para os filtros aplicados.");
-    }
-
+    currentPage = 1;
     paginateData();
 }
 
-// 📌 Função de paginação
 function paginateData() {
     const totalRows = filteredData.length;
     const totalPages = Math.ceil(totalRows / rowsPerPage);
@@ -105,18 +114,20 @@ function paginateData() {
     renderPagination(totalPages);
 }
 
-// 📌 Renderiza os dados na tabela HTML
 function renderTable(data) {
-    const resultTableBody = document.getElementById('resultTable').querySelector('tbody');
-    resultTableBody.innerHTML = '';
+    const tbody = document.querySelector('#resultTable tbody');
+    tbody.innerHTML = '';
 
     if (data.length === 0) {
-        resultTableBody.innerHTML = '<tr><td colspan="7">Nenhum dado encontrado</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7">Nenhum dado encontrado</td></tr>';
         return;
     }
 
     data.forEach(row => {
         const tr = document.createElement('tr');
+        if (normalizeText(row.formaPagamento) === 'voucher') {
+            tr.classList.add('voucher-row');
+        }
         tr.innerHTML = `
             <td>${row.os}</td>
             <td>${row.status}</td>
@@ -126,75 +137,72 @@ function renderTable(data) {
             <td>${row.valorFinal}</td>
             <td>${row.diferencaStr}</td>
         `;
-        resultTableBody.appendChild(tr);
+        tbody.appendChild(tr);
     });
 }
 
-// 📌 Renderiza a navegação de páginas
 function renderPagination(totalPages) {
-    const paginationContainer = document.getElementById('pagination');
-    paginationContainer.innerHTML = '';
-
+    const container = document.getElementById('pagination');
+    container.innerHTML = '';
     for (let i = 1; i <= totalPages; i++) {
-        const pageButton = document.createElement('button');
-        pageButton.textContent = i;
-        pageButton.classList.add('page-button');
-        if (i === currentPage) {
-            pageButton.classList.add('active'); // 🔹 Destaque na página atual
-        }
-        pageButton.addEventListener('click', () => goToPage(i));
-        paginationContainer.appendChild(pageButton);
+        const btn = document.createElement('button');
+        btn.textContent = i;
+        btn.classList.add('page-button');
+        if (i === currentPage) btn.classList.add('active');
+        btn.addEventListener('click', () => {
+            currentPage = i;
+            paginateData();
+        });
+        container.appendChild(btn);
     }
 }
 
-// 📌 Vai para uma página específica
-function goToPage(pageNumber) {
-    if (pageNumber < 1 || pageNumber > Math.ceil(filteredData.length / rowsPerPage)) return;
-    currentPage = pageNumber;
-    paginateData();
-}
-
-// 📌 Atualiza o filtro de status e reaplica os filtros
-function setFilter(filter) {
-    currentFilter = filter;
-    applyFilters();
-}
-
-// 📌 Converte uma linha do CSV para um objeto formatado
 function parseRow(row) {
+    const motorista = row['Motorista'];
+    if (!motorista || motorista.trim().toUpperCase() === 'N/A') {
+        return null;
+    }
+
     const estimativaStr = row['Estimativa do valor da corrida'];
     const valorCorridaStr = row['Valor da corrida'];
     const status = row['Status'];
     const formaPagamento = row['Forma de pagamento'] || 'N/A';
 
-    if (!estimativaStr || (!valorCorridaStr && status !== 'Cancelada')) return null;
+    // Permitindo estimativa vazia só para canceladas
+    if (!estimativaStr && status.toLowerCase() !== 'cancelada') return null;
 
-    const estimativaValor = parseFloat(estimativaStr.replace(',', '.'));
+    const estimativaValor = parseFloat((estimativaStr || '0').replace(',', '.'));
     const valorCorrida = valorCorridaStr ? parseFloat(valorCorridaStr.replace(',', '.')) : null;
 
     if (isNaN(estimativaValor) || (valorCorrida !== null && isNaN(valorCorrida))) return null;
 
     let diferenca = null;
     let diferencaStr = 'N/A';
+    let valorFinal = 'N/A';
 
-    if (valorCorrida !== null) {
+    if (status.toLowerCase() === 'cancelada') {
+        valorFinal = valorCorridaStr ? `R$ ${valorCorridaStr}` : 'R$ 0,00';
+        diferencaStr = 'R$ 0,00';
+        diferenca = 0;
+    } else if (valorCorrida !== null) {
         diferenca = valorCorrida - estimativaValor;
         const sinal = diferenca > 0 ? '+' : '';
         diferencaStr = `${sinal}R$ ${diferenca.toFixed(2).replace('.', ',')}`;
+        valorFinal = `R$ ${valorCorridaStr}`;
     }
 
     return {
         os: row['Nº OS'] || 'N/A',
         status: status || 'N/A',
-        motorista: row['Motorista'] || 'N/A',
+        motorista,
         formaPagamento,
-        estimativa: `R$ ${estimativaStr || 'N/A'}`,
-        valorFinal: valorCorridaStr ? `R$ ${valorCorridaStr}` : 'N/A',
+        estimativa: estimativaStr ? `R$ ${estimativaStr}` : 'N/A',
+        valorFinal,
         diferenca: diferenca !== null ? diferenca : 0,
         diferencaStr,
         porcentagem: (valorCorrida !== null && estimativaValor > 0)
             ? ((valorCorrida - estimativaValor) / estimativaValor) * 100
-            : null
+            : null,
+        valorCorrida
     };
-
 }

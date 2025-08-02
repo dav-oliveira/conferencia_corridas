@@ -177,6 +177,10 @@ tr:hover {
     border-color: #000;
 }
 
+.voucher-row {
+    background-color: #ffcccc !important; /* vermelho claro */
+}
+
 /* ============================== */
 /* 🔹 RESPONSIVIDADE 🔹 */
 /* ============================== */
