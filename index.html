@@ -13,56 +13,39 @@
     <!-- Meta Autor -->
     <meta name="author" content="Daniel Vicalvi">
     <title>Divergência de Valores</title>
-
-    <!-- Estilos -->
-    <link rel="stylesheet" href="style.css?v=1.3">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link rel="stylesheet" href="style.css?v=1.4" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" />
 </head>
-
 <body>
-
     <h1>Divergência de Valores</h1>
 
-    <!-- Contêiner para os botões -->
     <div id="controls">
-        <!-- Input de arquivo estilizado -->
         <label for="fileInput" class="custom-file-upload">
             <i class="fas fa-file-upload"></i> Selecionar Arquivo
         </label>
-        <input type="file" id="fileInput" accept=".csv">
+        <input type="file" id="fileInput" accept=".csv" />
 
-        <!-- Botões de ação -->
-        <button onclick="processFile()"><i class="fas fa-play"></i> Processar Arquivo</button>
+        <button onclick="processFile()">
+            <i class="fas fa-play"></i> Processar Arquivo
+        </button>
+
+        <button onclick="currentFilter='finishedPlus'; applyFilters();">
+            <i class="fas fa-check"></i> Finalizadas +
+        </button>
+
         <button onclick="currentFilter='finished'; applyFilters();">
-            <i class="fas fa-check"></i> Exibir Finalizadas
+            <i class="fas fa-check"></i> Finalizadas -
         </button>
 
         <button onclick="currentFilter='canceled'; applyFilters();">
-            <i class="fas fa-times"></i> Exibir Canceladas
+            <i class="fas fa-times"></i> Canceladas
         </button>
-
     </div>
 
-    <div>
-        <!-- Filtro de Forma de Pagamento -->
-        <select id="paymentFilter" onchange="applyFilters()"></select>
+    <br />
 
-        <label for="differenceFilter"></label>
-        <select id="differenceFilter" onchange="applyFilters()">
-            <option value="all">Todos</option>
-            <option value="negative">Negativos</option>
-            <option value="positive">Positivos</option>
-        </select>
-
-        <label for="percentChangeFilter"></label>
-        <input type="number" id="percentChangeFilter" placeholder="% de Alteração" onchange="applyFilters()" min="0"
-            step="5">
-
-    </div>
-    <br>
-    <!-- Tabela de Resultados -->
     <div id="result">
-        <table id="resultTable">
+        <table id="resultTable" border="1" cellspacing="0" cellpadding="5">
             <thead>
                 <tr>
                     <th>Nº OS</th>
@@ -82,10 +65,7 @@
 
     <div id="pagination"></div>
 
-    <!-- Scripts -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
-    <script src="script.js?v=1.3"></script>
-
+    <script src="script.js?v=1.4"></script>
 </body>
-
 </html>
