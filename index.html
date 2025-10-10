@@ -4,68 +4,78 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Metatags para evitar cache -->
     <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <!-- Meta Descrição -->
-    <meta name="description" content="Página para comparação de valores.">
-    <!-- Meta Autor -->
+    <meta name="description" content="Página para comparação de valores de corridas.">
     <meta name="author" content="Daniel Vicalvi">
     <title>Divergência de Valores</title>
-    <link rel="stylesheet" href="style.css?v=1.4" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" />
-</head>
-<body>
-    <h1>Divergência de Valores</h1>
 
-    <div id="controls">
+    <link rel="stylesheet" href="style.css?v=1.7">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"
+        integrity="sha512-..." crossorigin="anonymous">
+</head>
+
+<body>
+    <header>
+        <h1>Divergência de Valores</h1>
+    </header>
+
+    <form id="controls" role="toolbar" aria-label="Controles de filtragem e processamento">
         <label for="fileInput" class="custom-file-upload">
             <i class="fas fa-file-upload"></i> Selecionar Arquivo
         </label>
-        <input type="file" id="fileInput" accept=".csv" />
+        <input type="file" id="fileInput" accept=".csv">
 
-        <button onclick="processFile()">
+        <button type="button" id="processButton" aria-label="Processar arquivo CSV">
             <i class="fas fa-play"></i> Processar Arquivo
         </button>
 
-        <button onclick="currentFilter='finishedPlus'; applyFilters();">
+        <button type="button" id="btn-finished-plus" aria-label="Exibir finalizadas com diferença maior que 20%">
             <i class="fas fa-check"></i> Finalizadas +
         </button>
 
-        <button onclick="currentFilter='finished'; applyFilters();">
+        <button type="button" id="btn-finished" aria-label="Exibir finalizadas com diferença menor que 20%">
             <i class="fas fa-check"></i> Finalizadas -
         </button>
 
-        <button onclick="currentFilter='canceled'; applyFilters();">
+        <button type="button" id="btn-canceled" aria-label="Exibir corridas canceladas">
             <i class="fas fa-times"></i> Canceladas
         </button>
+
+        <button type="button" id="btn-highValue" aria-label="Exibir corridas acima de R$100">
+            <i class="fas fa-money-bill-wave"></i> &gt; R$ 100
+        </button>
+    </form>
+
+    <main id="result">
+        <div class="table-container">
+            <table id="resultTable">
+                <thead>
+                    <tr>
+                        <th>Nº OS</th>
+                        <th>Status</th>
+                        <th>Motorista</th>
+                        <th>Forma de pagamento</th>
+                        <th>Estimativa do Valor</th>
+                        <th>Valor da Corrida</th>
+                        <th>Diferença</th>
+                        <th>Taxa Extra</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </main>
+
+    <div id="loadingMessage" class="loading" style="display:none;" aria-live="polite">
+        <i class="fas fa-spinner fa-spin"></i> Processando arquivo, aguarde...
     </div>
 
-    <br />
+    <nav id="pagination" aria-label="Paginação"></nav>
 
-    <div id="result">
-        <table id="resultTable" border="1" cellspacing="0" cellpadding="5">
-            <thead>
-                <tr>
-                    <th>Nº OS</th>
-                    <th>Status</th>
-                    <th>Motorista</th>
-                    <th>Forma de pagamento</th>
-                    <th>Estimativa do Valor da Corrida</th>
-                    <th>Valor da Corrida</th>
-                    <th>Diferença</th>
-                </tr>
-            </thead>
-            <tbody></tbody>
-        </table>
-    </div>
-
-    <div id="loadingMessage" style="display:none;">Carregando...</div>
-
-    <div id="pagination"></div>
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
-    <script src="script.js?v=1.4"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js" defer></script>
+    <script src="script.js?v=1.7" defer></script>
 </body>
+
 </html>

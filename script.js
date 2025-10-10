@@ -1,40 +1,97 @@
+// =====================
+// 🔹 VARIÁVEIS GLOBAIS 🔹
+// =====================
 let parsedData = [];
 let filteredData = [];
 let currentPage = 1;
 const rowsPerPage = 15;
 let currentFilter = '';
 
+// =====================
+// 🔹 FUNÇÕES UTILITÁRIAS 🔹
+// =====================
 function normalizeText(text) {
     if (!text) return '';
-    return text.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+    return String(text).toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .trim();
 }
 
 function parseCurrencyToNumber(str) {
     if (!str) return 0;
-    return parseFloat(str.replace('R$', '').replace(/\./g, '').replace(',', '.').trim()) || 0;
+    const cleanStr = String(str).replace(/[^\d,.]/g, '').replace(',', '.');
+    return parseFloat(cleanStr) || 0;
 }
 
-function processFile() {
+// =====================
+// 🔹 FILTROS E ORDENAÇÃO 🔹
+// =====================
+const sortByEstimativaDesc = (a, b) => parseCurrencyToNumber(b.estimativa) - parseCurrencyToNumber(a.estimativa);
+const sortByFinalValueDesc = (a, b) => parseCurrencyToNumber(b.valorFinal) - parseCurrencyToNumber(a.valorFinal);
+
+const sortCanceled = (a, b) => {
+    const aIsVoucher = normalizeText(a.formaPagamento) === 'voucher' ? 0 : 1;
+    const bIsVoucher = normalizeText(b.formaPagamento) === 'voucher' ? 0 : 1;
+    if (aIsVoucher !== bIsVoucher) return aIsVoucher - bIsVoucher;
+    return sortByEstimativaDesc(a, b);
+};
+
+const filterLogic = {
+    finishedPlus: row =>
+        row.status.toLowerCase() === 'finalizada' &&
+        ['voucher', 'cartao no app', 'cartao app', 'saldo+cartao no app'].includes(normalizeText(row.formaPagamento)) &&
+        row.porcentagem !== null && row.porcentagem > 20,
+
+    finished: row =>
+        row.status.toLowerCase() === 'finalizada' &&
+        !['voucher', 'cartao no app', 'cartao app', 'saldo+cartao no app'].includes(normalizeText(row.formaPagamento)) &&
+        row.porcentagem !== null && row.porcentagem < -20,
+
+    canceled: row => {
+        const forma = normalizeText(row.formaPagamento);
+        return row.status.toLowerCase() === 'cancelada' &&
+            ((row.valorCorrida !== null && row.valorCorrida > 25) || forma === 'voucher');
+    },
+
+    highValue: row => {
+        const forma = normalizeText(row.formaPagamento);
+        const valor = parseCurrencyToNumber(row.valorFinal);
+        return row.status.toLowerCase() === 'finalizada' &&
+            ['voucher', 'cartao no app', 'cartao app', 'saldo+cartao no app'].includes(forma) &&
+            valor > 100;
+    },
+
+    default: row =>
+        row.status.toLowerCase() === 'finalizada' &&
+        row.porcentagem !== null && Math.abs(row.porcentagem) > 20
+};
+
+// =====================
+// 🔹 PROCESSAMENTO DE ARQUIVO 🔹
+// =====================
+function processFile(event) {
     const fileInput = document.getElementById('fileInput').files[0];
     if (!fileInput) {
-        alert('Por favor, selecione um arquivo.');
+        if (!event || event.type !== 'change') alert('Por favor, selecione um arquivo.');
         return;
     }
+
     document.getElementById('loadingMessage').style.display = 'block';
 
     const reader = new FileReader();
-    reader.onload = function(event) {
-        Papa.parse(event.target.result, {
+    reader.onload = function (e) {
+        Papa.parse(e.target.result, {
             header: true,
             skipEmptyLines: true,
-            complete: function(results) {
+            complete: function (results) {
                 parsedData = results.data.map(parseRow).filter(row => row !== null);
                 currentFilter = '';
                 applyFilters();
                 document.getElementById('loadingMessage').style.display = 'none';
             },
-            error: function(error) {
-                console.error('Erro ao processar o arquivo:', error);
+            error: function (err) {
+                console.error('Erro ao processar o arquivo:', err);
                 alert('Ocorreu um erro ao processar o arquivo. Tente novamente.');
                 document.getElementById('loadingMessage').style.display = 'none';
             }
@@ -43,69 +100,80 @@ function processFile() {
     reader.readAsText(fileInput, 'ISO-8859-1');
 }
 
+// =====================
+// 🔹 PARSE DE LINHA CSV 🔹
+// =====================
+function parseRow(row) {
+    const motorista = row['Motorista'];
+    if (!motorista || motorista.trim().toUpperCase() === 'N/A') return null;
+
+    const estimativaStr = row['Estimativa do valor da corrida'];
+    const valorCorridaOriginal = row['Valor da corrida'];
+    const status = row['Status'] || 'N/A';
+    const formaPagamento = row['Forma de pagamento'] || 'N/A';
+    const valorAdicionalStr = row['Valor extra'] || '';
+
+    if (!estimativaStr && status.toLowerCase() !== 'cancelada') return null;
+
+    const estimativaValor = parseCurrencyToNumber(estimativaStr);
+    const valorCorridaNum = valorCorridaOriginal ? parseCurrencyToNumber(valorCorridaOriginal) : null;
+    const valorAdicional = parseCurrencyToNumber(valorAdicionalStr);
+
+    let diferenca = 0, diferencaStr = 'R$ 0,00', valorFinal = 'N/A', porcentagem = null;
+
+    if (status.toLowerCase() === 'cancelada') {
+        valorFinal = valorCorridaOriginal ? `R$ ${valorCorridaOriginal}` : 'R$ 0,00';
+    } else if (valorCorridaNum !== null) {
+        diferenca = valorCorridaNum - estimativaValor;
+        const sinal = diferenca >= 0 ? '+' : '';
+        diferencaStr = `${sinal}R$ ${Math.abs(diferenca).toFixed(2).replace('.', ',')}`;
+        valorFinal = `R$ ${valorCorridaOriginal}`;
+        porcentagem = (estimativaValor > 0) ? ((valorCorridaNum - estimativaValor) / estimativaValor) * 100 : null;
+    }
+
+    const taxaExtra = valorAdicional > 0 ? `R$ ${valorAdicional.toFixed(2).replace('.', ',')}` : '';
+
+    return {
+        os: row['Nº OS'] || 'N/A',
+        status,
+        motorista,
+        formaPagamento,
+        estimativa: estimativaStr ? `R$ ${estimativaStr}` : 'N/A',
+        valorFinal,
+        diferenca,
+        diferencaStr,
+        porcentagem,
+        valorCorrida: valorCorridaNum,
+        taxaExtra
+    };
+}
+
+// =====================
+// 🔹 FILTROS E PAGINAÇÃO 🔹
+// =====================
 function applyFilters() {
     if (!parsedData.length) return;
 
-    if (currentFilter === 'finishedPlus') {
-        filteredData = parsedData.filter(row => {
-            return row.status.toLowerCase() === 'finalizada' &&
-                ['voucher', 'cartao no app', 'cartao app'].includes(normalizeText(row.formaPagamento)) &&
-                row.porcentagem !== null &&
-                row.porcentagem > 20 &&
-                row.motorista.toUpperCase() !== 'N/A';
-        });
-    } else if (currentFilter === 'finished') {
-        filteredData = parsedData.filter(row => {
-            return row.status.toLowerCase() === 'finalizada' &&
-                ['dinheiro', 'pix', 'cartao de credito', 'cartao de debito'].includes(normalizeText(row.formaPagamento)) &&
-                row.porcentagem !== null &&
-                row.porcentagem < -20 &&
-                row.motorista.toUpperCase() !== 'N/A';
-        });
-    } else if (currentFilter === 'canceled') {
-        filteredData = parsedData.filter(row => {
-            const forma = normalizeText(row.formaPagamento);
-            return row.status.toLowerCase() === 'cancelada' &&
-                row.motorista.toUpperCase() !== 'N/A' &&
-                (row.valorCorrida !== null && row.valorCorrida > 25 || forma === 'voucher');
-        });
+    const baseFilter = row => row.motorista.toUpperCase() !== 'N/A';
+    const filterKey = currentFilter || 'default';
+    const specificFilter = filterLogic[filterKey] || filterLogic['default'];
 
-        filteredData.sort((a, b) => {
-            const aIsVoucher = normalizeText(a.formaPagamento) === 'voucher' ? 0 : 1;
-            const bIsVoucher = normalizeText(b.formaPagamento) === 'voucher' ? 0 : 1;
-            if (aIsVoucher !== bIsVoucher) return aIsVoucher - bIsVoucher;
-            const valA = parseCurrencyToNumber(a.estimativa);
-            const valB = parseCurrencyToNumber(b.estimativa);
-            return valB - valA;
-        });
+    filteredData = parsedData.filter(row => baseFilter(row) && specificFilter(row));
 
-        currentPage = 1;
-        paginateData();
-        return;
-    } else {
-        // filtro padrão: finalizadas com diferença percentual > 20%
-        filteredData = parsedData.filter(row => {
-            return row.status.toLowerCase() === 'finalizada' &&
-                row.porcentagem !== null &&
-                Math.abs(row.porcentagem) > 20 &&
-                row.motorista.toUpperCase() !== 'N/A';
-        });
-    }
-
-    filteredData.sort((a, b) => {
-        const valA = parseCurrencyToNumber(a.estimativa);
-        const valB = parseCurrencyToNumber(b.estimativa);
-        return valB - valA;
-    });
+    if (currentFilter === 'canceled') filteredData.sort(sortCanceled);
+    else if (currentFilter === 'highValue') filteredData.sort(sortByFinalValueDesc);
+    else filteredData.sort(sortByEstimativaDesc);
 
     currentPage = 1;
     paginateData();
 }
 
+// =====================
+// 🔹 RENDERIZAÇÃO DA TABELA 🔹
+// =====================
 function paginateData() {
     const totalRows = filteredData.length;
     const totalPages = Math.ceil(totalRows / rowsPerPage);
-
     const startIndex = (currentPage - 1) * rowsPerPage;
     const endIndex = startIndex + rowsPerPage;
     const paginatedData = filteredData.slice(startIndex, endIndex);
@@ -119,15 +187,16 @@ function renderTable(data) {
     tbody.innerHTML = '';
 
     if (data.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7">Nenhum dado encontrado</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8">Nenhum dado encontrado</td></tr>';
         return;
     }
 
+    const fragment = document.createDocumentFragment();
+
     data.forEach(row => {
         const tr = document.createElement('tr');
-        if (normalizeText(row.formaPagamento) === 'voucher') {
-            tr.classList.add('voucher-row');
-        }
+        if (normalizeText(row.formaPagamento) === 'voucher') tr.classList.add('voucher-row');
+
         tr.innerHTML = `
             <td>${row.os}</td>
             <td>${row.status}</td>
@@ -136,14 +205,19 @@ function renderTable(data) {
             <td>${row.estimativa}</td>
             <td>${row.valorFinal}</td>
             <td>${row.diferencaStr}</td>
+            <td>${row.taxaExtra}</td>
         `;
-        tbody.appendChild(tr);
+        fragment.appendChild(tr);
     });
+
+    tbody.appendChild(fragment);
 }
 
 function renderPagination(totalPages) {
     const container = document.getElementById('pagination');
     container.innerHTML = '';
+    const fragment = document.createDocumentFragment();
+
     for (let i = 1; i <= totalPages; i++) {
         const btn = document.createElement('button');
         btn.textContent = i;
@@ -153,56 +227,35 @@ function renderPagination(totalPages) {
             currentPage = i;
             paginateData();
         });
-        container.appendChild(btn);
+        fragment.appendChild(btn);
     }
+    container.appendChild(fragment);
 }
 
-function parseRow(row) {
-    const motorista = row['Motorista'];
-    if (!motorista || motorista.trim().toUpperCase() === 'N/A') {
-        return null;
-    }
+// =====================
+// 🔹 EVENT LISTENERS 🔹
+// =====================
+document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('processButton').addEventListener('click', processFile);
+    document.getElementById('fileInput').addEventListener('change', processFile);
 
-    const estimativaStr = row['Estimativa do valor da corrida'];
-    const valorCorridaStr = row['Valor da corrida'];
-    const status = row['Status'];
-    const formaPagamento = row['Forma de pagamento'] || 'N/A';
+    document.getElementById('btn-finished-plus').addEventListener('click', () => {
+        currentFilter = 'finishedPlus';
+        applyFilters();
+    });
 
-    // Permitindo estimativa vazia só para canceladas
-    if (!estimativaStr && status.toLowerCase() !== 'cancelada') return null;
+    document.getElementById('btn-finished').addEventListener('click', () => {
+        currentFilter = 'finished';
+        applyFilters();
+    });
 
-    const estimativaValor = parseFloat((estimativaStr || '0').replace(',', '.'));
-    const valorCorrida = valorCorridaStr ? parseFloat(valorCorridaStr.replace(',', '.')) : null;
+    document.getElementById('btn-canceled').addEventListener('click', () => {
+        currentFilter = 'canceled';
+        applyFilters();
+    });
 
-    if (isNaN(estimativaValor) || (valorCorrida !== null && isNaN(valorCorrida))) return null;
-
-    let diferenca = null;
-    let diferencaStr = 'N/A';
-    let valorFinal = 'N/A';
-
-    if (status.toLowerCase() === 'cancelada') {
-        valorFinal = valorCorridaStr ? `R$ ${valorCorridaStr}` : 'R$ 0,00';
-        diferencaStr = 'R$ 0,00';
-        diferenca = 0;
-    } else if (valorCorrida !== null) {
-        diferenca = valorCorrida - estimativaValor;
-        const sinal = diferenca > 0 ? '+' : '';
-        diferencaStr = `${sinal}R$ ${diferenca.toFixed(2).replace('.', ',')}`;
-        valorFinal = `R$ ${valorCorridaStr}`;
-    }
-
-    return {
-        os: row['Nº OS'] || 'N/A',
-        status: status || 'N/A',
-        motorista,
-        formaPagamento,
-        estimativa: estimativaStr ? `R$ ${estimativaStr}` : 'N/A',
-        valorFinal,
-        diferenca: diferenca !== null ? diferenca : 0,
-        diferencaStr,
-        porcentagem: (valorCorrida !== null && estimativaValor > 0)
-            ? ((valorCorrida - estimativaValor) / estimativaValor) * 100
-            : null,
-        valorCorrida
-    };
-}
+    document.getElementById('btn-highValue').addEventListener('click', () => {
+        currentFilter = 'highValue';
+        applyFilters();
+    });
+});
