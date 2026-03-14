@@ -1,265 +1,81 @@
 <!DOCTYPE html>
 <html lang="pt-br">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <meta name="description" content="Sistema de análise de divergência de valores em corridas para detecção de fraude.">
+    <meta name="description" content="Página para comparação de valores de corridas.">
     <meta name="author" content="Daniel Vicalvi">
-    <title>Análise de Divergência de Valores em Corridas</title>
-    <link rel="stylesheet" href="style.css?v=2.1">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <title>Divergência de Valores</title>
+
+    <link rel="stylesheet" href="style.css?v=1.7">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"
+        integrity="sha512-..." crossorigin="anonymous">
 </head>
+
 <body>
     <header>
-        <h1>🚗 Análise de Divergência de Valores</h1>
-        <p>Detecção de fraudes e anomalias em corridas</p>
+        <h1>Divergência de Valores</h1>
     </header>
 
-    <div class="container">
-        <!-- SEÇÃO DE UPLOAD -->
-        <section class="upload-section">
-            <div class="upload-box">
-                <label for="fileInput" class="custom-file-upload">
-                    <i class="fas fa-file-upload"></i> Selecionar Arquivo CSV
-                </label>
-                <input type="file" id="fileInput" accept=".csv">
-                <button type="button" id="processButton" class="btn-primary">
-                    <i class="fas fa-play"></i> Processar Arquivo
-                </button>
-                <button type="button" id="loadSampleData" class="btn-secondary">
-                    <i class="fas fa-database"></i> Carregar Dados de Teste
-                </button>
-            </div>
-        </section>
+    <form id="controls" role="toolbar" aria-label="Controles de filtragem e processamento">
+        <label for="fileInput" class="custom-file-upload">
+            <i class="fas fa-file-upload"></i> Selecionar Arquivo
+        </label>
+        <input type="file" id="fileInput" accept=".csv">
 
-        <!-- ABAS DE NAVEGAÇÃO -->
-        <section class="tabs-section">
-            <div class="tabs-header">
-                <button class="tab-button active" data-tab="corridas">
-                    <i class="fas fa-list"></i> Corridas
-                </button>
-                <button class="tab-button" data-tab="motoristas">
-                    <i class="fas fa-users"></i> Motoristas
-                </button>
-                <button class="tab-button" data-tab="rotas">
-                    <i class="fas fa-map"></i> Análise de Rotas
-                </button>
-            </div>
+        <button type="button" id="processButton" aria-label="Processar arquivo CSV">
+            <i class="fas fa-play"></i> Processar Arquivo
+        </button>
 
-            <!-- ABA 1: CORRIDAS -->
-            <div id="corridas" class="tab-content active">
-                <!-- FILTROS -->
-                <section class="filters-section">
-                    <h2>Filtros de Análise</h2>
-                    <div class="filter-buttons">
-                        <button type="button" class="btn-filter active" data-filter="all">
-                            <i class="fas fa-list"></i> Todas as Corridas
-                        </button>
-                        <button type="button" class="btn-filter" data-filter="high-risk">
-                            <i class="fas fa-exclamation-triangle"></i> Risco Alto
-                        </button>
-                        <button type="button" class="btn-filter" data-filter="voucher">
-                            <i class="fas fa-ticket-alt"></i> Voucher
-                        </button>
-                        <button type="button" class="btn-filter" data-filter="cartao-app">
-                            <i class="fas fa-credit-card"></i> Cartão App
-                        </button>
-                        <button type="button" class="btn-filter" data-filter="dinheiro">
-                            <i class="fas fa-money-bill"></i> Dinheiro
-                        </button>
-                    </div>
-                </section>
+        <button type="button" id="btn-finished-plus" aria-label="Exibir finalizadas com diferença maior que 20%">
+            <i class="fas fa-check"></i> Finalizadas +
+        </button>
 
-                <!-- ESTATÍSTICAS -->
-                <section class="stats-section">
-                    <div class="stats-grid">
-                        <div class="stat-card">
-                            <h3>Total de Corridas</h3>
-                            <p id="stat-total">0</p>
-                        </div>
-                        <div class="stat-card">
-                            <h3>Risco Crítico</h3>
-                            <p id="stat-critical">0</p>
-                        </div>
-                        <div class="stat-card">
-                            <h3>Risco Alto</h3>
-                            <p id="stat-high">0</p>
-                        </div>
-                        <div class="stat-card">
-                            <h3>Risco Médio</h3>
-                            <p id="stat-medium">0</p>
-                        </div>
-                    </div>
-                </section>
+        <button type="button" id="btn-finished" aria-label="Exibir finalizadas com diferença menor que 20%">
+            <i class="fas fa-check"></i> Finalizadas -
+        </button>
 
-                <!-- RESULTADOS -->
-                <section class="results-section">
-                    <div class="results-header">
-                        <h2>Resultados da Análise</h2>
-                        <button type="button" id="exportBtn" class="btn-export">
-                            <i class="fas fa-download"></i> Exportar CSV
-                        </button>
-                    </div>
+        <button type="button" id="btn-canceled" aria-label="Exibir corridas canceladas">
+            <i class="fas fa-times"></i> Canceladas
+        </button>
 
-                    <div class="table-container">
-                        <table id="resultTable">
-                            <thead>
-                                <tr>
-                                    <th>Nº OS</th>
-                                    <th>Motorista</th>
-                                    <th>Forma de Pagamento</th>
-                                    <th>Estimativa</th>
-                                    <th>Valor Final</th>
-                                    <th>Diferença</th>
-                                    <th>Taxa Extra</th>
-                                    <th>Risco</th>
-                                    <th>Ação</th>
-                                </tr>
-                            </thead>
-                            <tbody></tbody>
-                        </table>
-                    </div>
+        <button type="button" id="btn-highValue" aria-label="Exibir corridas acima de R$100">
+            <i class="fas fa-money-bill-wave"></i> &gt; R$ 100
+        </button>
+    </form>
 
-                    <div id="noDataMessage" class="no-data">
-                        <i class="fas fa-inbox"></i>
-                        <p>Nenhum dado carregado. Selecione um arquivo CSV para começar.</p>
-                    </div>
-                </section>
-
-                <!-- PAGINAÇÃO -->
-                <nav id="pagination" class="pagination"></nav>
-            </div>
-
-            <!-- ABA 2: MOTORISTAS -->
-            <div id="motoristas" class="tab-content">
-                <section class="results-section">
-                    <div class="results-header">
-                        <h2>Análise Comportamental por Motorista</h2>
-                        <div class="filter-buttons">
-                            <button type="button" class="btn-filter-driver active" data-filter-driver="all">
-                                Todos
-                            </button>
-                            <button type="button" class="btn-filter-driver" data-filter-driver="critico">
-                                Crítico
-                            </button>
-                            <button type="button" class="btn-filter-driver" data-filter-driver="alto">
-                                Alto
-                            </button>
-                            <button type="button" class="btn-filter-driver" data-filter-driver="medio">
-                                Médio
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="table-container">
-                        <table id="driverTable">
-                            <thead>
-                                <tr>
-                                    <th>Motorista</th>
-                                    <th>Total de Corridas</th>
-                                    <th>Corridas Suspeitas</th>
-                                    <th>Taxa de Fraude (%)</th>
-                                    <th>Risk Score</th>
-                                    <th>Desvio vs. Média</th>
-                                    <th>Risco</th>
-                                    <th>Ação</th>
-                                </tr>
-                            </thead>
-                            <tbody></tbody>
-                        </table>
-                    </div>
-
-                    <div id="noDriverData" class="no-data">
-                        <i class="fas fa-inbox"></i>
-                        <p>Nenhum dado de motorista disponível.</p>
-                    </div>
-                </section>
-            </div>
-
-            <!-- ABA 3: ANÁLISE DE ROTAS -->
-            <div id="rotas" class="tab-content">
-                <section class="results-section">
-                    <div class="results-header">
-                        <h2>Análise de Correlação: Distância vs. Preço</h2>
-                        <p style="font-size: 0.9rem; color: #7f8c8d; margin-top: 0.5rem;">
-                            <i class="fas fa-info-circle"></i> Mostrando apenas corridas com rota NÃO alterada pelo passageiro
-                        </p>
-                    </div>
-
-                    <div class="table-container">
-                        <table id="routeTable">
-                            <thead>
-                                <tr>
-                                    <th>Nº OS</th>
-                                    <th>Motorista</th>
-                                    <th>Dist. Estimada (km)</th>
-                                    <th>Dist. Real (km)</th>
-                                    <th>Divergência Distância</th>
-                                    <th>Preço Estimado</th>
-                                    <th>Preço Real</th>
-                                    <th>Divergência Preço</th>
-                                    <th>Correlação</th>
-                                    <th>Status</th>
-                                </tr>
-                            </thead>
-                            <tbody></tbody>
-                        </table>
-                    </div>
-
-                    <div id="noRouteData" class="no-data">
-                        <i class="fas fa-inbox"></i>
-                        <p>Nenhum dado de rota disponível.</p>
-                    </div>
-                </section>
-            </div>
-        </section>
-    </div>
-
-    <!-- MODAL DE DETALHES DA CORRIDA -->
-    <div id="detailsModal" class="modal">
-        <div class="modal-content">
-            <span class="close">&times;</span>
-            <h2>Detalhes da Corrida</h2>
-            <div id="modalBody"></div>
+    <main id="result">
+        <div class="table-container">
+            <table id="resultTable">
+                <thead>
+                    <tr>
+                        <th>Nº OS</th>
+                        <th>Status</th>
+                        <th>Motorista</th>
+                        <th>Forma de pagamento</th>
+                        <th>Estimativa do Valor</th>
+                        <th>Valor da Corrida</th>
+                        <th>Diferença</th>
+                        <th>Taxa Extra</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
         </div>
+    </main>
+
+    <div id="loadingMessage" class="loading" style="display:none;" aria-live="polite">
+        <i class="fas fa-spinner fa-spin"></i> Processando arquivo, aguarde...
     </div>
 
-    <!-- MODAL DE DETALHES DO MOTORISTA -->
-    <div id="driverModal" class="modal">
-        <div class="modal-content">
-            <span class="close">&times;</span>
-            <h2>Histórico do Motorista</h2>
-            <div id="driverModalBody"></div>
-        </div>
-    </div>
+    <nav id="pagination" aria-label="Paginação"></nav>
 
-    <!-- MODAL DE ALERTA CRÍTICO -->
-    <div id="criticalAlertModal" class="modal modal-alert">
-        <div class="modal-content modal-alert-content">
-            <div class="alert-icon">
-                <i class="fas fa-exclamation-circle"></i>
-            </div>
-            <h2>🚨 ALERTA CRÍTICO DE FRAUDE</h2>
-            <div id="alertModalBody"></div>
-            <button type="button" class="btn-primary" onclick="closeCriticalAlert()">
-                Entendido
-            </button>
-        </div>
-    </div>
-
-    <!-- NOTIFICAÇÕES (Toast) -->
-    <div id="alertContainer" class="alert-container"></div>
-
-    <!-- LOADING -->
-    <div id="loadingMessage" class="loading">
-        <div class="spinner"></div>
-        <p>Processando arquivo, aguarde...</p>
-    </div>
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
-    <script src="script.js?v=2.1"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js" defer></script>
+    <script src="script.js?v=1.7" defer></script>
 </body>
+
 </html>
