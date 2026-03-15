@@ -11,14 +11,17 @@
     <meta name="author" content="Daniel Vicalvi">
     <title>Divergência de Valores</title>
 
-    <link rel="stylesheet" href="style.css?v=1.7">
+    <link rel="stylesheet" href="style.css?v=2.2">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"
         integrity="sha512-..." crossorigin="anonymous">
 </head>
 
 <body>
     <header>
-        <h1>Divergência de Valores</h1>
+        <div class="header-content">
+            <h1><i class="fas fa-chart-line"></i> Divergência de Valores</h1>
+            <p>Sistema de análise de corridas e detecção de anomalias</p>
+        </div>
     </header>
 
     <form id="controls" role="toolbar" aria-label="Controles de filtragem e processamento">
@@ -27,25 +30,29 @@
         </label>
         <input type="file" id="fileInput" accept=".csv">
 
-        <button type="button" id="processButton" aria-label="Processar arquivo CSV">
-            <i class="fas fa-play"></i> Processar Arquivo
-        </button>
+        <div class="filter-group">
+            <button type="button" id="btn-finished-plus" class="btn-filter" aria-label="Exibir finalizadas com diferença maior que 20%">
+                <i class="fas fa-arrow-up"></i> Finalizadas +
+            </button>
 
-        <button type="button" id="btn-finished-plus" aria-label="Exibir finalizadas com diferença maior que 20%">
-            <i class="fas fa-check"></i> Finalizadas +
-        </button>
+            <button type="button" id="btn-finished" class="btn-filter" aria-label="Exibir finalizadas com diferença menor que 20%">
+                <i class="fas fa-arrow-down"></i> Finalizadas -
+            </button>
 
-        <button type="button" id="btn-finished" aria-label="Exibir finalizadas com diferença menor que 20%">
-            <i class="fas fa-check"></i> Finalizadas -
-        </button>
+            <div class="filter-subgroup">
+                <button type="button" id="btn-canceled" class="btn-filter" aria-label="Exibir corridas canceladas">
+                    <i class="fas fa-times-circle"></i> Canceladas
+                </button>
 
-        <button type="button" id="btn-canceled" aria-label="Exibir corridas canceladas">
-            <i class="fas fa-times"></i> Canceladas
-        </button>
+                <button type="button" id="btn-canceled-all" class="btn-filter-secondary" aria-label="Incluir todas as corridas canceladas">
+                    <i class="fas fa-list"></i> Incluir Todas
+                </button>
+            </div>
 
-        <button type="button" id="btn-highValue" aria-label="Exibir corridas acima de R$100">
-            <i class="fas fa-money-bill-wave"></i> &gt; R$ 100
-        </button>
+            <button type="button" id="btn-highValue" class="btn-filter" aria-label="Exibir corridas acima de R$100">
+                <i class="fas fa-money-bill-wave"></i> &gt; R$ 100
+            </button>
+        </div>
     </form>
 
     <main id="result">
@@ -61,6 +68,7 @@
                         <th>Valor da Corrida</th>
                         <th>Diferença</th>
                         <th>Taxa Extra</th>
+                        <th>Ação</th>
                     </tr>
                 </thead>
                 <tbody></tbody>
@@ -69,13 +77,36 @@
     </main>
 
     <div id="loadingMessage" class="loading" style="display:none;" aria-live="polite">
-        <i class="fas fa-spinner fa-spin"></i> Processando arquivo, aguarde...
+        <div class="spinner"></div>
+        <p>Processando arquivo, aguarde...</p>
     </div>
 
     <nav id="pagination" aria-label="Paginação"></nav>
 
+    <!-- MODAL DE DETALHES -->
+    <div id="detailsModal" class="modal" style="display:none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Detalhes da Corrida Cancelada</h2>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <!-- Conteúdo dinâmico -->
+            </div>
+            <div class="modal-footer">
+                <button class="btn-delete" onclick="deleteRide()">
+                    <i class="fas fa-trash"></i> Excluir
+                </button>
+                <button class="btn-close" onclick="closeModal()">Fechar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- OVERLAY DO MODAL -->
+    <div id="modalOverlay" class="modal-overlay" style="display:none;" onclick="closeModal()"></div>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js" defer></script>
-    <script src="script.js?v=1.7" defer></script>
+    <script src="script.js?v=2.2" defer></script>
 </body>
 
 </html>
